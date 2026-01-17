@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
         const {
+            userId,
             email,
-            password,
             name,
             phone,
             age,
@@ -26,70 +26,95 @@ export async function POST(request: Request) {
             additionalInfo
         } = body;
 
-        if (!email || !password) {
+        console.log("Registering teacher with userId:", userId, "email:", email);
+
+        if (!userId || !email) {
+            console.error("Missing userId or email in registration body");
             return NextResponse.json(
-                { error: "Email and password are required" },
+                { error: "UserId and email are required" },
                 { status: 400 }
             );
         }
 
-        // Check if user already exists
-        const existingUser = await db.user.findUnique({
-            where: { email },
+        // Set custom claims for role
+        await adminAuth.setCustomUserClaims(userId, { role: "teacher" });
+
+        // Store user and teacher profile in Firestore
+        const userRef = adminDb.collection('users').doc(userId);
+        const teacherProfileRef = adminDb.collection('teacherProfiles').doc(userId);
+
+        const batch = adminDb.batch();
+
+        batch.set(userRef, {
+            email,
+            name,
+            role: "teacher",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         });
 
-        if (existingUser) {
-            return NextResponse.json(
-                { error: "User already exists with this email" },
-                { status: 400 }
-            );
-        }
-
-        // Create user and teacher profile in a transaction
-        const user = await db.user.create({
-            data: {
-                email,
-                password, // In a real app, hash this!
-                name,
-                role: "teacher",
-                teacherProfile: {
-                    create: {
-                        phone,
-                        age,
-                        gender,
-                        address,
-                        district,
-                        city,
-                        highestQualification,
-                        subjects: subjects.join(", "),
-                        teachingMode,
-                        experience,
-                        rateType,
-                        rateAmount,
-                        availability,
-                        whatsappNumber,
-                        whatsappConsent,
-                        additionalInfo,
-                    },
-                },
-            } as any,
-            include: {
-                teacherProfile: true,
-            } as any,
+        batch.set(teacherProfileRef, {
+            userId: userId,
+            phone,
+            age,
+            gender,
+            address,
+            district,
+            city,
+            highestQualification,
+            subjects: Array.isArray(subjects) ? subjects.join(", ") : subjects,
+            teachingMode,
+            experience,
+            rateType,
+            rateAmount,
+            availability,
+            whatsappNumber,
+            whatsappConsent,
+            additionalInfo,
+            rating: 0,
+            reviews: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         });
 
-        // Remove password from response
-        const { password: _, ...userWithoutPassword } = user as any;
+        await batch.commit();
+
+        const user = {
+            id: userId,
+            email,
+            name,
+            role: "teacher",
+            teacherProfile: {
+                phone,
+                age,
+                gender,
+                address,
+                district,
+                city,
+                highestQualification,
+                subjects,
+                teachingMode,
+                experience,
+                rateType,
+                rateAmount,
+                availability,
+                whatsappNumber,
+                whatsappConsent,
+                additionalInfo,
+            }
+        };
 
         return NextResponse.json(
-            { message: "Teacher registered successfully", user: userWithoutPassword },
+            { message: "Teacher registered successfully", user },
             { status: 201 }
         );
+
     } catch (error: any) {
-        console.error("Teacher registration error:", error);
+        console.error("Teacher registration full error:", error);
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: error.message || "Internal server error", stack: process.env.NODE_ENV === 'development' ? error.stack : undefined },
             { status: 500 }
         );
     }
 }
+

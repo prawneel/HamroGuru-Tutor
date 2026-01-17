@@ -11,6 +11,14 @@ import { twMerge } from "tailwind-merge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { auth } from "@/lib/firebase";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  onAuthStateChanged
+} from "firebase/auth";
+
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -243,20 +251,11 @@ function SignInForm({ role, onSwitchToSignUp, onSuccess }: { role: UserRole; onS
     const password = formData.get("password");
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Sign in failed");
-      }
+      // Use Firebase Client SDK for sign in
+      const userCredential = await signInWithEmailAndPassword(auth, email as string, password as string);
 
       toast.success("Login successful!");
-      if (onSuccess) onSuccess(data.user);
+      if (onSuccess) onSuccess(userCredential.user);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -324,28 +323,39 @@ function SignUpForm({ role, onSwitchToSignIn, onSuccess }: { role: UserRole; onS
     }
 
     try {
-      const response = await fetch("/api/auth/register", {
+      // Use Firebase Client SDK for sign up
+      const userCredential = await createUserWithEmailAndPassword(auth, email as string, password as string);
+
+      // Update display name
+      await updateProfile(userCredential.user, {
+        displayName: name as string
+      });
+
+      // Call the registration API to sync data to Firestore and set custom claims
+      // We still use the API route for server-side operations like Firestore sync and claims
+      const response = await fetch(role === "student" ? "/api/auth/register" : "/api/auth/register-teacher", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userId: userCredential.user.uid, // Pass the UID
           name,
           email,
-          password,
           role,
           age: age ? parseInt(age as string) : undefined,
           address,
           preferredSubject,
+          // Pass all other teacher fields if role is teacher
+          ...(role === "teacher" ? Object.fromEntries(formData) : {})
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        const data = await response.json();
+        throw new Error(data.error || data.message || "Registration sync failed");
       }
 
       toast.success("Account created successfully!");
-      if (onSuccess) onSuccess(data.user);
+      if (onSuccess) onSuccess(userCredential.user);
     } catch (error: any) {
       toast.error(error.message);
     } finally {

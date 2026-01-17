@@ -9,14 +9,15 @@ import {
   UserPlus,
   Menu,
   X,
-  LogOut,
   User as UserIcon,
-  Search
+  Search,
+  LayoutGrid
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface NavbarProps {
   className?: string;
@@ -50,6 +51,12 @@ export function Navbar({ className, currentView, onViewChange, user, onLogout }:
     );
   }
 
+  if (user && user.role === 'teacher') {
+    navLinks.push(
+      { label: "Dashboard", href: "profile-dashboard", icon: LayoutGrid }
+    );
+  }
+
   if (!user) {
     navLinks.push(
       { label: "Sign In", href: "sign-in", icon: LogIn },
@@ -60,7 +67,11 @@ export function Navbar({ className, currentView, onViewChange, user, onLogout }:
   const handleNavigation = (href: string) => {
     // If routing to specific pages that exist as actual routes
     if (href === 'profile') {
-      window.location.href = '/profile';
+      if (user?.role === 'teacher') {
+        if (onViewChange) onViewChange('profile-dashboard');
+      } else {
+        toast.info("Student profile coming soon!");
+      }
       return;
     }
 
@@ -83,7 +94,7 @@ export function Navbar({ className, currentView, onViewChange, user, onLogout }:
           {/* Logo */}
           <div
             className="flex items-center gap-2 cursor-pointer group"
-            onClick={() => onViewChange("landing")}
+            onClick={() => onViewChange?.("landing")}
           >
             <Logo />
           </div>
@@ -113,9 +124,9 @@ export function Navbar({ className, currentView, onViewChange, user, onLogout }:
 
             {user && (
               <div className="flex items-center gap-2 ml-4 pl-4 border-l">
-                <Button variant={currentView === 'profile' ? 'default' : 'ghost'} onClick={() => window.location.href = '/profile'} className="gap-2">
+                <Button variant={currentView === 'profile-dashboard' ? 'default' : 'ghost'} onClick={() => handleNavigation('profile')} className="gap-2">
                   <UserIcon className="w-4 h-4" />
-                  {user.name.split(' ')[0]}
+                  {user.name ? user.name.split(' ')[0] : 'User'}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
                   Logout
@@ -164,7 +175,7 @@ export function Navbar({ className, currentView, onViewChange, user, onLogout }:
             })}
             {user && (
               <>
-                <Button variant="ghost" onClick={() => window.location.href = '/profile'} className="w-full justify-start gap-2">
+                <Button variant="ghost" onClick={() => handleNavigation('profile')} className="w-full justify-start gap-2">
                   <UserIcon className="w-4 h-4" />
                   Profile
                 </Button>

@@ -26,6 +26,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+
 
 const steps = [
   { id: "account", title: "Account Info", icon: User },
@@ -90,15 +93,23 @@ export default function StudentRegistrationForm({ onViewChange }: { onViewChange
     setIsSubmitting(true);
 
     try {
+      // 1. Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+
+      // 2. Update display name
+      await updateProfile(userCredential.user, {
+        displayName: formData.fullName
+      });
+
+      // 3. Sync profile data to Firestore via our registration API
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userId: userCredential.user.uid, // Pass the Firebase UID
           name: formData.fullName,
           email: formData.email,
-          password: formData.password,
           role: "student",
-          // Send additional fields as metadata or extended profile if needed
           age: parseInt(formData.age),
           address: formData.address,
           preferredSubject: formData.preferredSubject,
@@ -108,16 +119,18 @@ export default function StudentRegistrationForm({ onViewChange }: { onViewChange
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(data.message || "Profile sync failed");
       }
 
+
       toast.success("Registration successful!");
-      localStorage.setItem("hamroguru_user", JSON.stringify(data.user));
+
       if (onViewChange) {
         onViewChange("landing");
       } else {
         window.location.href = "/";
       }
+
     } catch (error: any) {
       toast.error(error.message);
     } finally {

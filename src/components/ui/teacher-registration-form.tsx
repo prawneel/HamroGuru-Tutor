@@ -26,6 +26,9 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+
 
 const steps = [
   { id: "personal", title: "Personal Info", icon: GraduationCap },
@@ -140,42 +143,130 @@ export default function TeacherRegistrationForm() {
   };
 
   const handleSubmit = async () => {
+    console.log("🚀 Starting teacher registration...");
+    console.log("📋 Form data:", {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      subjects: formData.subjects,
+      hasPassword: !!formData.password
+    });
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      console.error("❌ Invalid email:", formData.email);
+      return;
+    }
+
+    if (!formData.password || formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      console.log("📧 Creating Firebase Auth user for:", formData.email);
+      // 1. Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      console.log("✅ Firebase Auth user created:", userCredential.user.uid);
+
+      // 2. Update display name
+      await updateProfile(userCredential.user, {
+        displayName: formData.name
+      });
+      console.log("✅ Display name updated");
+
+      // 3. Sync profile data to Firestore via our registration API
+      console.log("📤 Sending profile data to API...");
       const response = await fetch("/api/auth/register-teacher", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          userId: userCredential.user.uid, // Pass the Firebase UID
+          password: undefined, // Don't send password to Firestore
+          confirmPassword: undefined,
+        }),
       });
 
       const data = await response.json();
+      console.log("📥 API Response:", data);
 
       if (!response.ok) {
-        throw new Error(data.error || "Registration failed");
+        console.error("❌ API Error:", data);
+        throw new Error(data.error || "Profile sync failed");
       }
 
+      console.log("✅ Teacher registration successful!");
       toast.success("Teacher registration successful!");
 
-      // Auto Sign-in
-      localStorage.setItem("hamroguru_user", JSON.stringify(data.user));
-
-      // Redirect to profile
+      // Redirect to profile or home
       setTimeout(() => {
-        window.location.href = "/profile";
+        window.location.href = "/";
       }, 1500);
 
     } catch (error: any) {
-      toast.error(error.message);
+      console.error("❌ Registration error:", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+
+
+      // Handle email already in use - attempt login instead
+      if (error.code === "auth/email-already-in-use") {
+        console.log("📧 Email already registered, attempting login...");
+        toast.info("Email already registered. Logging you in...");
+
+        try {
+          const { signInWithEmailAndPassword } = await import("firebase/auth");
+          const loginCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+          console.log("✅ Login successful:", loginCredential.user.uid);
+          toast.success("Welcome back!");
+
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 1000);
+          setIsSubmitting(false);
+          return;
+        } catch (loginError: any) {
+          console.error("❌ Login failed:", loginError);
+          if (loginError.code === "auth/wrong-password") {
+            toast.error("This email is already registered with a different password. Please use the correct password.");
+          } else {
+            toast.error("Login failed: " + loginError.message);
+          }
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Provide user-friendly error messages for other errors
+      let errorMessage = "Registration failed. Please try again.";
+      if (error.code === "auth/invalid-email") {
+        errorMessage = "Invalid email address. Please check and try again.";
+      } else if (error.code === "auth/weak-password") {
+        errorMessage = "Password is too weak. Please use at least 6 characters.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+
   const isStepValid = () => {
+    let valid = false;
     switch (currentStep) {
       case 0:
-        return formData.name.trim() !== "" &&
+        valid = formData.name.trim() !== "" &&
           formData.email.trim() !== "" &&
           formData.password.length >= 6 &&
           formData.password === formData.confirmPassword &&
@@ -183,21 +274,33 @@ export default function TeacherRegistrationForm() {
           formData.age !== "" &&
           formData.gender !== "" &&
           formData.address.trim() !== "";
+        break;
       case 1:
-        return formData.highestQualification !== "" &&
+        valid = formData.highestQualification !== "" &&
           formData.experience !== "" &&
           formData.subjects.length > 0;
+        break;
       case 2:
-        return formData.teachingMode !== "";
+        valid = formData.teachingMode !== "";
+        break;
       case 3:
-        return formData.rateType !== "" &&
+        valid = formData.rateType !== "" &&
           formData.rateAmount !== "" &&
           formData.availability !== "";
+        break;
       case 4:
-        return formData.termsConsent;
+        valid = formData.termsConsent;
+        console.log("📋 Step 4 validation - Terms consent:", formData.termsConsent, "Valid:", valid);
+        break;
       default:
-        return true;
+        valid = true;
     }
+
+    if (!valid && currentStep === 4) {
+      console.log("⚠️ Registration button disabled - Please accept terms and conditions");
+    }
+
+    return valid;
   };
 
   return (

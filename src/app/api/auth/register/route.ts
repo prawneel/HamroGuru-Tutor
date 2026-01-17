@@ -1,36 +1,42 @@
 
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
 export async function POST(req: Request) {
     try {
-        const { name, email, password, role } = await req.json();
+        const { userId, name, email, role } = await req.json();
 
-        if (!name || !email || !password || !role) {
+        if (!userId || !name || !email || !role) {
             return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
         }
 
-        const existingUser = await db.user.findUnique({
-            where: { email },
+        // Set custom claims for role
+        await adminAuth.setCustomUserClaims(userId, { role });
+
+        // Store additional user data in Firestore
+        await adminDb.collection('users').doc(userId).set({
+            name,
+            email,
+            role,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         });
 
-        if (existingUser) {
-            return NextResponse.json({ message: 'User already exists' }, { status: 409 });
-        }
+        const user = {
+            id: userId,
+            name,
+            email,
+            role,
+        };
 
-        // In a real app, hash password here. For this demo, we store as is.
-        const user = await db.user.create({
-            data: {
-                name,
-                email,
-                password, // TODO: Hash this
-                role,
-            },
-        });
 
         return NextResponse.json({ message: 'User created successfully', user }, { status: 201 });
-    } catch (error) {
-        console.error('Registration error:', error);
-        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    } catch (error: any) {
+        console.error('Student registration full error:', error);
+        return NextResponse.json({
+            message: error.message || 'Internal server error',
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { status: 500 });
     }
 }
+
