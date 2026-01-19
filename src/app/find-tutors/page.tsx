@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MapPin, GraduationCap, Star, Clock, DollarSign, Filter, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 interface Teacher {
-  id: number;
+  id: string;
   name: string;
   subjects: string[];
   rate: string;
@@ -29,88 +29,9 @@ interface Teacher {
   mode: string;
   image: string;
   verified: boolean;
+  whatsappNumber?: string;
+  whatsappConsent?: boolean;
 }
-
-const teachers: Teacher[] = [
-  {
-    id: 1,
-    name: "Rajesh Kumar",
-    subjects: ["Mathematics", "Physics"],
-    rate: "NPR 500/hr",
-    rating: 4.8,
-    reviews: 156,
-    location: "Kathmandu",
-    experience: "5+ years",
-    mode: "Online, Home",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop",
-    verified: true,
-  },
-  {
-    id: 2,
-    name: "Priya Sharma",
-    subjects: ["English", "Literature"],
-    rate: "NPR 450/hr",
-    rating: 4.9,
-    reviews: 203,
-    location: "Lalitpur",
-    experience: "8+ years",
-    mode: "Online",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop",
-    verified: true,
-  },
-  {
-    id: 3,
-    name: "Bibek Thapa",
-    subjects: ["Science", "Chemistry"],
-    rate: "NPR 600/hr",
-    rating: 4.7,
-    reviews: 98,
-    location: "Bhaktapur",
-    experience: "6+ years",
-    mode: "Home",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop",
-    verified: true,
-  },
-  {
-    id: 4,
-    name: "Anita Gurung",
-    subjects: ["Computer", "IT"],
-    rate: "NPR 550/hr",
-    rating: 4.6,
-    reviews: 87,
-    location: "Pokhara",
-    experience: "4+ years",
-    mode: "Online, Home",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop",
-    verified: false,
-  },
-  {
-    id: 5,
-    name: "Sanjay Rai",
-    subjects: ["Mathematics", "Economics"],
-    rate: "NPR 480/hr",
-    rating: 4.5,
-    reviews: 72,
-    location: "Kathmandu",
-    experience: "7+ years",
-    mode: "Online",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop",
-    verified: true,
-  },
-  {
-    id: 6,
-    name: "Suman Koirala",
-    subjects: ["Nepali", "Social Studies"],
-    rate: "NPR 400/hr",
-    rating: 4.4,
-    reviews: 65,
-    location: "Biratnagar",
-    experience: "3+ years",
-    mode: "Online",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop",
-    verified: true,
-  },
-];
 
 const subjects = [
   "Mathematics",
@@ -137,13 +58,48 @@ const locations = [
 
 const modes = ["All", "Online", "Home Tuition", "Both"];
 
+
 export default function FindTeachersPage() {
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedMode, setSelectedMode] = useState("All");
   const [priceRange, setPriceRange] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchTeachers() {
+      try {
+        const res = await fetch("/api/list-teachers");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.teachers)) {
+          // Flatten teacher data
+          setTeachers(
+            data.teachers.map((t: any) => ({
+              id: t.id,
+              name: t.teacherProfile?.name || t.userData?.displayName || "",
+              subjects: t.teacherProfile?.subjects || [],
+              rate: t.teacherProfile?.rateAmount ? `NPR ${t.teacherProfile.rateAmount}/hr` : "",
+              rating: t.teacherProfile?.rating || 0,
+              reviews: t.teacherProfile?.reviews || 0,
+              location: t.teacherProfile?.city || "",
+              experience: t.teacherProfile?.experience || "",
+              mode: t.teacherProfile?.teachingMode || "",
+              image: t.teacherProfile?.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(t.teacherProfile?.name || "Teacher"),
+              verified: !!t.teacherProfile?.verified,
+              whatsappNumber: t.teacherProfile?.whatsappNumber,
+              whatsappConsent: t.teacherProfile?.whatsappConsent,
+            }))
+          );
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to fetch teachers", e);
+      }
+    }
+    fetchTeachers();
+  }, []);
 
   const filteredTeachers = teachers.filter((teacher) => {
     const matchesSearch =
@@ -369,10 +325,23 @@ export default function FindTeachersPage() {
                       <Button variant="outline" size="sm">
                         View Profile
                       </Button>
-                      <Button size="sm" className="gap-2">
-                        <User className="w-4 h-4" />
-                        Contact
-                      </Button>
+                      {teacher.whatsappNumber && teacher.whatsappConsent ? (
+                        <a
+                          href={`https://wa.me/${teacher.whatsappNumber.replace(/[^\d]/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Button size="sm" className="gap-2" variant="secondary">
+                            <User className="w-4 h-4" />
+                            WhatsApp
+                          </Button>
+                        </a>
+                      ) : (
+                        <Button size="sm" className="gap-2" disabled>
+                          <User className="w-4 h-4" />
+                          No WhatsApp
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

@@ -106,14 +106,33 @@ This scaffold includes a comprehensive set of modern web development tools:
 - **Theme Switching**: Built-in dark/light mode support
 
 ### 🔐 Backend Integration
-- **Authentication**: Ready-to-use auth flows with NextAuth.js
-- **Database**: Type-safe database operations with Prisma
-- **API Client**: HTTP requests with Fetch + TanStack Query
-- **State Management**: Simple and scalable with Zustand
+## 🤝 Get Started with Z.ai
 
-### 🌍 Production Features
-- **Internationalization**: Multi-language support with Next Intl
-- **Image Optimization**: Automatic image processing with Sharp
-- **Type Safety**: End-to-end TypeScript with Zod validation
-- **Essential Hooks**: 100+ useful React hooks with ReactUse for common patterns
+1. **Clone this scaffold** to jumpstart your project
+2. **Visit [chat.z.ai](https://chat.z.ai)** to access your AI coding assistant
+3. **Start building** with intelligent code generation and assistance
+4. **Deploy with confidence** using the production-ready setup
 
+---
+
+Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+
+## Deployment Notes - frontend / backend separation
+
+- Frontend: deploy the Next.js app as a static site on Vercel. Remove or ignore any server API routes — backend APIs have been moved to `backend/`.
+- Backend: deploy the Node/Express service in `backend/` to Render (or any Node host). The backend exposes endpoints under `/api/*` and uses Firebase Admin; set your `FIREBASE_*` environment variables on the host.
+- Environment variables: see `.env.example`. For Vercel set `NEXT_PUBLIC_*` keys; for Render set `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` (ensure proper escaping of newlines).
+- Git: `.gitignore` excludes private keys and `.env*`; push the repo to `hamroguri-tutor` on GitHub and do NOT commit any service account files or private keys.
+
+If you want, I can (1) create a minimal `.github/workflows` workflow to deploy the frontend to Vercel and backend to Render, or (2) prepare a clean push script. Which would you prefer?
+Built with ❤️ for the developer community. Supercharged by [Z.ai](https://chat.z.ai) 🚀
+
+## Deployment Notes - frontend / backend separation
+
+- Frontend: deploy the Next.js app as a static site on Vercel. Remove or ignore any server API routes — backend APIs have been moved to `backend/`.
+- Backend: deploy the Node/Express service in `backend/` to Render (or any Node host). The backend exposes endpoints under `/api/*` and uses Firebase Admin; set your `FIREBASE_*` environment variables on the host.
+- Environment variables: see `.env.example`. For Vercel set `NEXT_PUBLIC_*` keys; for Render set `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` (ensure proper escaping of newlines).
+- Git: `.gitignore` excludes private keys and `.env*`; push the repo to `hamroguri-tutor` on GitHub and do NOT commit any service account files or private keys.
+
+If you want, I can (1) create a minimal `.github/workflows` workflow to deploy the frontend to Vercel and backend to Render, or (2) prepare a clean push script. Which would you prefer?
+>>>>>>> 21751a8 (ci: add GitHub Actions workflows for frontend (Vercel) and backend (Render); add CI checks)

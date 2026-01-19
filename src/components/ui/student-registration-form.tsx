@@ -77,8 +77,11 @@ export default function StudentRegistrationForm({ onViewChange }: { onViewChange
     age: "",
     address: "",
     preferredSubject: "",
+    phone: "",
+    grade: "",
   });
 
+  const [rememberCredentials, setRememberCredentials] = useState(false);
   const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -113,6 +116,8 @@ export default function StudentRegistrationForm({ onViewChange }: { onViewChange
           age: parseInt(formData.age),
           address: formData.address,
           preferredSubject: formData.preferredSubject,
+          phone: formData.phone,
+          grade: formData.grade,
         }),
       });
 
@@ -124,6 +129,20 @@ export default function StudentRegistrationForm({ onViewChange }: { onViewChange
 
 
       toast.success("Registration successful!");
+
+      // Save email (and optionally password) locally for next-time login
+      try {
+        localStorage.setItem("hg_last_email", formData.email);
+        if (rememberCredentials) {
+          localStorage.setItem("hg_saved_password", formData.password);
+          localStorage.setItem("hg_save_password", "1");
+        } else {
+          localStorage.removeItem("hg_saved_password");
+          localStorage.removeItem("hg_save_password");
+        }
+      } catch (e) {
+        // ignore storage errors
+      }
 
       if (onViewChange) {
         onViewChange("landing");
@@ -199,7 +218,7 @@ export default function StudentRegistrationForm({ onViewChange }: { onViewChange
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="age">Age *</Label>
                     <Input
@@ -209,6 +228,15 @@ export default function StudentRegistrationForm({ onViewChange }: { onViewChange
                       value={formData.age}
                       onChange={(e) => updateFormData("age", e.target.value)}
                       required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="grade">Grade *</Label>
+                    <Input
+                      id="grade"
+                      placeholder="e.g. Grade 11"
+                      value={formData.grade}
+                      onChange={(e) => updateFormData("grade", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -246,6 +274,16 @@ export default function StudentRegistrationForm({ onViewChange }: { onViewChange
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    placeholder="e.g. +977 98XXXXXXXX"
+                    value={formData.phone}
+                    onChange={(e) => updateFormData("phone", e.target.value)}
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="password">Password *</Label>
@@ -272,6 +310,12 @@ export default function StudentRegistrationForm({ onViewChange }: { onViewChange
                 </div>
               </CardContent>
               <CardFooter className="pt-6">
+                <div className="px-4 mb-2">
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" checked={rememberCredentials} onChange={(e) => setRememberCredentials(e.target.checked)} />
+                    <span className="text-sm">Remember credentials (save locally)</span>
+                  </label>
+                </div>
                 <Button
                   type="submit"
                   className="w-full rounded-2xl h-12 text-lg"

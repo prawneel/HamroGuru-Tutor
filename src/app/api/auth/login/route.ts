@@ -26,18 +26,11 @@ export async function POST(req: Request) {
             return NextResponse.json({
                 message: 'Login check successful. Please use Firebase Client SDK to complete login.',
                 user: {
-                    id: userRecord.uid,
-                    email: userRecord.email,
-                    ...userData
-                }
-            }, { status: 200 });
-        } catch (error: any) {
-            console.error('Login error:', error);
-            return NextResponse.json({ message: 'Invalid credentials or user not found' }, { status: 401 });
-        }
-    } catch (error) {
-        console.error('Login error:', error);
-        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-    }
-}
+                    import { NextResponse } from 'next/server';
 
+                    export async function POST() {
+                      return NextResponse.json({ message: 'This API has moved to the backend service. Call the backend at NEXT_PUBLIC_API_URL.' }, { status: 410 });
+                    }
+        } catch (error: any) {
+
+            console.error('Login error:', error);

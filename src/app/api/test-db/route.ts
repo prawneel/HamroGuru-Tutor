@@ -44,12 +44,8 @@ export async function GET() {
             message: "Firestore connection established and verified!",
             data: doc.data()
         });
-    } catch (error: any) {
-        console.error("Firestore test error:", error);
-        return NextResponse.json({
-            success: false,
-            error: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        }, { status: 500 });
+    import { NextResponse } from 'next/server';
+
+    export async function GET() {
+      return NextResponse.json({ message: 'This API has moved to the backend service. Call the backend at NEXT_PUBLIC_API_URL.' }, { status: 410 });
     }
-}

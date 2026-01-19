@@ -241,18 +241,45 @@ const RoleSelector = ({ selectedRole, onRoleChange }: RoleSelectorProps) => {
 
 function SignInForm({ role, onSwitchToSignUp, onSuccess }: { role: UserRole; onSwitchToSignUp: () => void; onSuccess?: (user: any) => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+
+  // Load saved credentials (email always, password only if saved)
+  React.useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem("hg_last_email");
+      const savePasswordFlag = localStorage.getItem("hg_save_password");
+      const savedPassword = localStorage.getItem("hg_saved_password");
+      if (savedEmail) setEmail(savedEmail);
+      if (savePasswordFlag && savedPassword) {
+        setPassword(savedPassword);
+        setRemember(true);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
 
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
-
     try {
       // Use Firebase Client SDK for sign in
       const userCredential = await signInWithEmailAndPassword(auth, email as string, password as string);
+
+      // Save last email and optionally password
+      try {
+        localStorage.setItem("hg_last_email", email);
+        if (remember) {
+          localStorage.setItem("hg_saved_password", password);
+          localStorage.setItem("hg_save_password", "1");
+        } else {
+          localStorage.removeItem("hg_saved_password");
+          localStorage.removeItem("hg_save_password");
+        }
+      } catch (e) {}
 
       toast.success("Login successful!");
       if (onSuccess) onSuccess(userCredential.user);
@@ -278,13 +305,19 @@ function SignInForm({ role, onSwitchToSignUp, onSuccess }: { role: UserRole; onS
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
-          <AuthInput id="email" name="email" type="email" placeholder="m@example.com" required autoComplete="email" />
+          <AuthInput id="email" name="email" type="email" placeholder="m@example.com" required autoComplete="email" value={email} onChange={(e) => setEmail(e.currentTarget.value)} />
         </div>
-        <PasswordInput name="password" label="Password" required autoComplete="current-password" placeholder="Password" />
+        <PasswordInput name="password" label="Password" required autoComplete="current-password" placeholder="Password" value={password} onChange={(e: any) => setPassword(e.target.value)} />
         <div className="text-right">
           <button type="button" className="text-sm text-primary hover:underline">
             Forgot password?
           </button>
+        </div>
+        <div className="flex items-center justify-between">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+            <span className="text-sm">Remember me</span>
+          </label>
         </div>
         <AuthButton type="submit" className="mt-2" disabled={isSubmitting}>
           {isSubmitting ? "Signing In..." : `Sign In as ${role === "student" ? "Student" : "Teacher"}`}
@@ -353,8 +386,12 @@ function SignUpForm({ role, onSwitchToSignIn, onSuccess }: { role: UserRole; onS
         const data = await response.json();
         throw new Error(data.error || data.message || "Registration sync failed");
       }
-
       toast.success("Account created successfully!");
+
+      // remember email for next time
+      try {
+        localStorage.setItem("hg_last_email", email as string);
+      } catch (e) {}
       if (onSuccess) onSuccess(userCredential.user);
     } catch (error: any) {
       toast.error(error.message);

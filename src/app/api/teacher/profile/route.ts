@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 export async function GET(request: Request) {
@@ -43,13 +44,13 @@ export async function POST(request: Request) {
             where: { userId },
             data: {
                 ...profileData,
-                updatedAt: new Date(),
-            }
-        });
+                import { NextResponse } from "next/server";
 
-        return NextResponse.json({ message: "Profile updated successfully", profile: updatedProfile });
-    } catch (error: any) {
-        console.error("Profile update error:", error);
-        return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
-    }
+                export async function GET() {
+                  return NextResponse.json({ message: 'This API has moved to the backend service. Call the backend at NEXT_PUBLIC_API_URL.' }, { status: 410 });
+                }
+
+                export async function POST() {
+                  return NextResponse.json({ message: 'This API has moved to the backend service. Call the backend at NEXT_PUBLIC_API_URL.' }, { status: 410 });
+                }
 }

@@ -26,17 +26,11 @@ export async function POST(req: Request) {
             id: userId,
             name,
             email,
-            role,
-        };
+            import { NextResponse } from 'next/server';
 
-
-        return NextResponse.json({ message: 'User created successfully', user }, { status: 201 });
+            export async function POST() {
+              return NextResponse.json({ message: 'This API has moved to the backend service. Call the backend at NEXT_PUBLIC_API_URL.' }, { status: 410 });
+            }
     } catch (error: any) {
-        console.error('Student registration full error:', error);
-        return NextResponse.json({
-            message: error.message || 'Internal server error',
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        }, { status: 500 });
-    }
-}
 
+        console.error('Student registration full error:', error);

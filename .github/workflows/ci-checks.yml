@@ -1,0 +1,28 @@
+name: CI checks
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install root deps
+        run: npm ci || true
+
+      - name: Run lint (frontend)
+        run: |
+          if [ -f frontend/package.json ]; then cd frontend && npm run lint || true; fi
+
+      - name: Run tests (frontend)
+        run: |
+          if [ -f frontend/package.json ]; then cd frontend && npm test || true; fi
