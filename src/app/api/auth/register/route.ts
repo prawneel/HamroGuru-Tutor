@@ -1,36 +1,11 @@
 
 import { NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
-export async function POST(req: Request) {
-    try {
-        const { userId, name, email, role } = await req.json();
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-        if (!userId || !name || !email || !role) {
-            return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
-        }
-
-        // Set custom claims for role
-        await adminAuth.setCustomUserClaims(userId, { role });
-
-        // Store additional user data in Firestore
-        await adminDb.collection('users').doc(userId).set({
-            name,
-            email,
-            role,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        });
-
-        const user = {
-            id: userId,
-            name,
-            email,
-            import { NextResponse } from 'next/server';
-
-            export async function POST() {
-              return NextResponse.json({ message: 'This API has moved to the backend service. Call the backend at NEXT_PUBLIC_API_URL.' }, { status: 410 });
-            }
-    } catch (error: any) {
-
-        console.error('Student registration full error:', error);
+export async function POST(request: Request) {
+    const body = await request.text();
+    const res = await fetch(`${BACKEND.replace(/\/$/, '')}/api/auth/register`, { method: 'POST', headers: { 'Content-Type': request.headers.get('content-type') || 'application/json' }, body });
+    const text = await res.text();
+    return new NextResponse(text, { status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'application/json' } });
+}

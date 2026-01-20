@@ -1,1 +1,1 @@
-{ "rules": { ".read": "auth != null", ".write": "auth != null" } }
+{ "message": "Realtime Database rules removed — repository no longer uses Firebase Realtime Database." }

@@ -1,46 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import { adminDb, adminAuth } from "@/lib/firebase-admin";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { id, password } = body;
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-    // Basic protective check: prefer environment variable, fallback to provided password
-    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "pranil@admin123";
-    if (!password || password !== ADMIN_PASSWORD) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!id) {
-      return NextResponse.json({ ok: false, error: "Missing id" }, { status: 400 });
-    }
-
-    // Delete teacher profile doc
-    try {
-      await adminDb.collection("teacherProfiles").doc(String(id)).delete();
-    } catch (e) {
-      console.error("Failed to delete teacherProfiles doc:", e);
-    }
-
-    // Delete user doc
-    try {
-      await adminDb.collection("users").doc(String(id)).delete();
-    } catch (e) {
-      console.error("Failed to delete users doc:", e);
-    }
-
-    // Attempt to delete auth user if present
-    try {
-      await adminAuth.deleteUser(String(id));
-    } catch (e) {
-      // Not fatal; may not exist or adminAuth not configured
-      console.warn("deleteUser failed or not configured:", e.message || e);
-    }
-
-    return NextResponse.json({ ok: true });
-  } catch (error: any) {
-    console.error("Admin delete error:", error);
-    return NextResponse.json({ ok: false, error: error.message || String(error) }, { status: 500 });
-  }
+export async function POST(request: Request) {
+  const body = await request.text();
+  const res = await fetch(`${BACKEND.replace(/\/$/, '')}/api/admin/delete-teacher`, { method: 'POST', headers: { 'Content-Type': request.headers.get('content-type') || 'application/json' }, body });
+  const text = await res.text();
+  return new NextResponse(text, { status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'application/json' } });
 }

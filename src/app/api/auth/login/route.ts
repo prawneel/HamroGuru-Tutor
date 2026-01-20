@@ -1,36 +1,11 @@
 
 import { NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
-export async function POST(req: Request) {
-    try {
-        const { email, password } = await req.json();
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-        if (!email || !password) {
-            return NextResponse.json({ message: 'Missing email or password' }, { status: 400 });
-        }
-
-        try {
-            // In Firebase, password verification is typically done on the client side
-            // using the Firebase Client SDK. The server then receives a token.
-            // However, to maintain the current flow, we will fetch the user.
-            // Note: Admin SDK does NOT support password verification for security.
-            // We will instruct the client to use Firebase Client SDK for login.
-
-            const userRecord = await adminAuth.getUserByEmail(email);
-
-            // Fetch additional data from Firestore
-            const userDoc = await adminDb.collection('users').doc(userRecord.uid).get();
-            const userData = userDoc.data();
-
-            return NextResponse.json({
-                message: 'Login check successful. Please use Firebase Client SDK to complete login.',
-                user: {
-                    import { NextResponse } from 'next/server';
-
-                    export async function POST() {
-                      return NextResponse.json({ message: 'This API has moved to the backend service. Call the backend at NEXT_PUBLIC_API_URL.' }, { status: 410 });
-                    }
-        } catch (error: any) {
-
-            console.error('Login error:', error);
+export async function POST(request: Request) {
+    const body = await request.text();
+    const res = await fetch(`${BACKEND.replace(/\/$/, '')}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': request.headers.get('content-type') || 'application/json' }, body });
+    const text = await res.text();
+    return new NextResponse(text, { status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'application/json' } });
+}

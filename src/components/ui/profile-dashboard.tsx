@@ -9,9 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
-import { deleteUser, updatePassword } from "firebase/auth";
+import { auth, db, doc, getDoc, updateDoc, deleteDoc, deleteUser, updatePassword } from "@/lib/firebase";
 
 export default function ProfileDashboard() {
     const [loading, setLoading] = useState(true);

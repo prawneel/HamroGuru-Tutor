@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { db, collection, getDocs, doc, deleteDoc, onSnapshot } from "@/lib/firebase";
 import { toast } from "sonner";
 
 export default function AdminPage() {

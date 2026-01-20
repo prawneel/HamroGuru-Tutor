@@ -11,13 +11,14 @@ import { twMerge } from "tailwind-merge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { auth } from "@/lib/firebase";
 import {
+  auth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
-  onAuthStateChanged
-} from "firebase/auth";
+  onAuthStateChanged,
+  signOut
+} from "@/lib/firebase";
 
 
 function cn(...inputs: ClassValue[]) {

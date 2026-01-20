@@ -8,9 +8,7 @@ import StudentRegistrationForm from "@/components/ui/student-registration-form";
 import { AuthUI } from "@/components/ui/auth-fuse";
 import { Navbar } from "@/components/ui/navbar";
 import ProfileDashboard from "@/components/ui/profile-dashboard";
-import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from "@/lib/firebase";
 
 
 export default function Home() {

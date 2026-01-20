@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String         @id
+  email     String         @unique
+  name      String
+  role      String
+  createdAt DateTime
+  updatedAt DateTime
+  teacherProfile TeacherProfile?
+}
+
+model TeacherProfile {
+  id                 String   @id
+  userId             String   @unique
+  phone              String?
+  age                Int?
+  gender             String?
+  address            String?
+  district           String?
+  city               String?
+  highestQualification String?
+  subjects           String?
+  teachingMode       String?
+  experience         String?
+  rateType           String?
+  rateAmount         Float?
+  availability       String?
+  whatsappNumber     String?
+  whatsappConsent    Boolean?
+  additionalInfo     String?
+  rating             Float?
+  reviews            Int?
+  createdAt          DateTime
+  updatedAt          DateTime
+
+  user User @relation(fields: [userId], references: [id])
+}

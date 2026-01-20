@@ -1,51 +1,9 @@
 import { NextResponse } from 'next/server';
-import * as admin from 'firebase-admin';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
-export async function GET() {
-    try {
-        console.log("Testing Firestore connectivity...");
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-        const rawKey = process.env.FIREBASE_PRIVATE_KEY || "";
-        const status = {
-            adminApps: admin.apps.length,
-            hasAdminAuth: !!adminAuth,
-            hasAdminDb: !!adminDb,
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKeyLength: rawKey.length,
-            privateKeyStart: rawKey.substring(0, 50),
-            privateKeyEnd: rawKey.substring(rawKey.length - 50),
-        };
-
-        if (!adminDb) {
-            return NextResponse.json({
-                success: false,
-                error: "Firebase Admin Database not initialized",
-                status
-            }, { status: 500 });
-        }
-
-        const testRef = adminDb.collection('test_connection').doc('ping');
-
-        await testRef.set({
-            timestamp: new Date().toISOString(),
-            environment: process.env.NODE_ENV,
-            message: "Connectivity test from HamroGuru API"
-        });
-
-        const doc = await testRef.get();
-        if (!doc.exists) {
-            throw new Error("Document was not created properly");
-        }
-
-        return NextResponse.json({
-            success: true,
-            message: "Firestore connection established and verified!",
-            data: doc.data()
-        });
-    import { NextResponse } from 'next/server';
-
-    export async function GET() {
-      return NextResponse.json({ message: 'This API has moved to the backend service. Call the backend at NEXT_PUBLIC_API_URL.' }, { status: 410 });
-    }
+export async function GET(request: Request) {
+  const res = await fetch(`${BACKEND.replace(/\/$/, '')}/api/test-db`, { method: 'GET' });
+  const text = await res.text();
+  return new NextResponse(text, { status: res.status, headers: { 'content-type': res.headers.get('content-type') || 'application/json' } });
+}

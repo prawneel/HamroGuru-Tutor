@@ -120,8 +120,8 @@ Built with ❤️ for the developer community. Supercharged by [Z.ai](https://ch
 ## Deployment Notes - frontend / backend separation
 
 - Frontend: deploy the Next.js app as a static site on Vercel. Remove or ignore any server API routes — backend APIs have been moved to `backend/`.
-- Backend: deploy the Node/Express service in `backend/` to Render (or any Node host). The backend exposes endpoints under `/api/*` and uses Firebase Admin; set your `FIREBASE_*` environment variables on the host.
-- Environment variables: see `.env.example`. For Vercel set `NEXT_PUBLIC_*` keys; for Render set `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY` (ensure proper escaping of newlines).
+- Backend: deploy the Node/Express service in `backend/` to Render (or any Node host). The backend exposes endpoints under `/api/*` and uses Prisma + PostgreSQL. Set `DATABASE_URL` in `backend/.env` on the host.
+- Environment variables: see `backend/.env.sample`. For the frontend, set `NEXT_PUBLIC_API_URL` to point to your backend API (e.g. `https://api.example.com`).
 - Git: `.gitignore` excludes private keys and `.env*`; push the repo to `hamroguri-tutor` on GitHub and do NOT commit any service account files or private keys.
 
 If you want, I can (1) create a minimal `.github/workflows` workflow to deploy the frontend to Vercel and backend to Render, or (2) prepare a clean push script. Which would you prefer?
